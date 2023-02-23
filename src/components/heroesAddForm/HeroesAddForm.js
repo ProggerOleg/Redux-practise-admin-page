@@ -1,18 +1,19 @@
 import { v4 as uuidv4 } from 'uuid';
-import {useState, useEffect} from 'react'
-import { useSelector } from 'react-redux';
-import { useDispatch } from 'react-redux';
+import { useState } from 'react'
+import { useSelector, useDispatch } from 'react-redux';
+import store from '../../store';
 
-import { heroesFetching, heroesFetched, filtersFetched } from '../../actions';
 import { useHttp } from '../../hooks/http.hook';
+import { heroAdded } from '../heroesList/heroesSlice';
+import { selectAll } from '../heroesFilters/filtersSlice';
 
 const HeroesAddForm = () => {
     const [name, setName] = useState('');
     const [description, setDesc] = useState('');
     const [element, setElement] = useState('');
 
-    const {heroes} = useSelector(state => state.heroes);
-    const {filters, statusFilters} = useSelector(state => state.filters);
+    const {statusFilters} = useSelector(state => state.filters);
+    const filters = selectAll(store.getState())
     const dispatch = useDispatch();
     const {request} = useHttp();
 
@@ -24,10 +25,8 @@ const HeroesAddForm = () => {
             description: description,
             element: element
         }
-        let data = [...heroes, newHero]
-        dispatch(heroesFetching());
         request(`http://localhost:3001/heroes`, 'POST', JSON.stringify(newHero))
-        .then(dispatch(heroesFetched(data)))
+        .then(dispatch(heroAdded(newHero)))
         .catch(err => console.log(err));
 
         // Очищаем форму после отправки
@@ -35,13 +34,6 @@ const HeroesAddForm = () => {
         setDesc('');
         setElement('');
     }
-
-    useEffect(() => {
-        request(`http://localhost:3001/filters`, 'GET')
-        .then(data => dispatch(filtersFetched((data))))
-        .catch(err => console.log(err));
-        // eslint-disable-next-line
-    }, [])
 
     const renderFilters = (filters, status) => {
         if (status === "loading") {
